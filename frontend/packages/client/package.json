@@ -45,7 +45,8 @@
     "react-scripts": "4.0.3",
     "sass": "^1.49.8",
     "string-strip-html": "8.3.0",
-    "yup": "^0.32.11"
+    "yup": "^0.32.11",
+    "react-git-info": "^2.0.1"
   },
   "scripts": {
     "start": "craco start",

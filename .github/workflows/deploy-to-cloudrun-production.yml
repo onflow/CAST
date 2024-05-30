@@ -50,22 +50,22 @@ jobs:
         with:
           project_id: ${{ env.PROJECT_ID }}
       
-      - name: Docker Auth
+      - name: Build CAST Backend 
         run: |-
           gcloud auth configure-docker ${{ env.GAR_LOCATION }}-docker.pkg.dev
           docker build -t ${{ env.BACKEND_DOCKER_IMAGE_URL }} --file backend/Dockerfile .
           docker push ${{ env.BACKEND_DOCKER_IMAGE_URL }}
 
-      - name: build and push frontend - stage -
+      - name: Build CAST Frontend 
         env:
           BACKEND: ${{ env.backend_api }}
         run: | 
           gcloud auth configure-docker ${{ env.GAR_LOCATION }}-docker.pkg.dev
           cd frontend && sed -i -e 's/REPLACE_HOTJAR_SITE_ID/${{ env.hotjar_site_id }}/g' Dockerfile.stage && sed -i -e 's|REPLACE_SENTRY_URL|${{ env.sentry_url }}|g' Dockerfile.stage && docker build -f Dockerfile.stage . -t ${{ env.FRONTEND_DOCKER_IMAGE_URL }}
 
-  deploy-staging-backend:
+  deploy-production-backend:
     needs: [build]
-    environment: staging
+    environment: production
     runs-on: ubuntu-latest
     permissions:
       contents: read

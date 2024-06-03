@@ -10,7 +10,7 @@ import (
 )
 
 type Config struct {
-	Features map[string]bool `default:"useCorsMiddleware:false,validateTimestamps:true,validateAllowlist:true,validateBlocklist:true,validateSigs:true"`
+	Features map[string]bool `default:"useCorsMiddleware:true,validateTimestamps:true,validateAllowlist:true,validateBlocklist:true,validateSigs:true"`
 }
 
 type Database struct {
@@ -97,10 +97,10 @@ type FTBalanceResponse struct {
 }
 
 type CustomScript struct {
-	Key         string `json:"key" validate:"required"`
-	Name        string `json:"name" validate:"required"`
+	Key         string `json:"key"         validate:"required"`
+	Name        string `json:"name"        validate:"required"`
 	Description string `json:"description" validate:"required"`
-	Src         string `json:"src" validate:"required"`
+	Src         string `json:"src"         validate:"required"`
 }
 
 func (b *FTBalanceResponse) NewFTBalance() {

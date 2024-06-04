@@ -10,7 +10,7 @@ import (
 )
 
 type Config struct {
-	Features map[string]bool `default:"useCorsMiddleware:true,validateTimestamps:true,validateAllowlist:true,validateBlocklist:true,validateSigs:true"`
+	Features map[string]bool `default:"useCorsMiddleware:false,validateTimestamps:true,validateAllowlist:true,validateBlocklist:true,validateSigs:true"`
 }
 
 type Database struct {

@@ -21,7 +21,7 @@ env:
   
   # GCP VARS 
   BACKEND_DOCKER_IMAGE_URL: ${{ vars.BACKEND_GCP_DOCKER_IMAGE_URL }}:${{ github.sha }}
-  FRONTEND_DOCKER_IMAGE_URL: ${{ vars.FRONTNED_GCP_DOCKER_IMAGE_URL }}:${{ github.sha }}
+  FRONTEND_DOCKER_IMAGE_URL: ${{ vars.FRONTEND_GCP_DOCKER_IMAGE_URL }}:${{ github.sha }}
   GAR_LOCATION: ${{ vars.GCP_GAR_LOCATION }}
   PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
   SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
@@ -53,7 +53,7 @@ jobs:
       - name: Docker Auth
         run: |-
           gcloud auth configure-docker ${{ env.GAR_LOCATION }}-docker.pkg.dev
-          docker build -t ${{ env.BACKEND_DOCKER_IMAGE_URL }} --file backend/Dockerfile .
+          docker build -t ${{ env.BACKEND_DOCKER_IMAGE_URL }} --file backend/Dockerfile ./backend
           docker push ${{ env.BACKEND_DOCKER_IMAGE_URL }}
 
       - name: build and push frontend - stage -
@@ -61,7 +61,8 @@ jobs:
           BACKEND: ${{ env.backend_api }}
         run: | 
           gcloud auth configure-docker ${{ env.GAR_LOCATION }}-docker.pkg.dev
-          cd frontend && sed -i -e 's/REPLACE_HOTJAR_SITE_ID/${{ env.hotjar_site_id }}/g' Dockerfile.stage && sed -i -e 's|REPLACE_SENTRY_URL|${{ env.sentry_url }}|g' Dockerfile.stage && docker build -f Dockerfile.stage . -t ${{ env.FRONTEND_DOCKER_IMAGE_URL }}
+          docker build -f Dockerfile.stage ./frontend -t ${{ env.FRONTEND_DOCKER_IMAGE_URL }}
+          docker push ${{ env.FRONTEND_DOCKER_IMAGE_URL }}
 
   deploy-staging-backend:
     needs: [build]

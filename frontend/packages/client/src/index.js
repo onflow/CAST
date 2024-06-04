@@ -1,13 +1,9 @@
 import ReactDOM from 'react-dom';
-import * as Sentry from '@sentry/react';
-import { BrowserTracing } from '@sentry/tracing';
 import App from './App';
 import './index.css';
 
-Sentry.init({
-  dsn: process.env.REACT_APP_SENTRY_URL,
-  integrations: [new BrowserTracing()],
-  tracesSampleRate: 0.3,
-});
+// hack for buffer error on react-scripts version > 5
+// eslint-disable-next-line
+window.Buffer = window.Buffer || require('buffer').Buffer;
 
 ReactDOM.render(<App />, document.getElementById('root'));

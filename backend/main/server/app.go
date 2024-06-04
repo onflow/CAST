@@ -1,42 +1,43 @@
 package server
 
 import (
-	// "errors"
-
 	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
+
+	"github.com/axiomzen/envconfig"
+	"github.com/gorilla/mux"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	"github.com/DapperCollectives/CAST/backend/main/middleware"
 	"github.com/DapperCollectives/CAST/backend/main/models"
 	"github.com/DapperCollectives/CAST/backend/main/shared"
 	"github.com/DapperCollectives/CAST/backend/main/strategies"
-	"github.com/axiomzen/envconfig"
-	"github.com/gorilla/mux"
-	"github.com/jackc/pgx/v4/pgxpool"
-
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
-type Database shared.Database
-type IpfsClient shared.IpfsClient
-type Allowlist shared.Allowlist
-type Vote models.Vote
-type Proposal models.Proposal
-type Community models.Community
-type Balance models.Balance
-type List models.List
-type ListRequest models.ListPayload
-type ListUpdatePayload models.ListUpdatePayload
-type CommunityUser models.CommunityUser
-type CommunityUserPayload models.CommunityUserPayload
-type UserCommunity models.UserCommunity
+type (
+	Database             shared.Database
+	IpfsClient           shared.IpfsClient
+	Allowlist            shared.Allowlist
+	Vote                 models.Vote
+	Proposal             models.Proposal
+	Community            models.Community
+	Balance              models.Balance
+	List                 models.List
+	ListRequest          models.ListPayload
+	ListUpdatePayload    models.ListUpdatePayload
+	CommunityUser        models.CommunityUser
+	CommunityUserPayload models.CommunityUserPayload
+	UserCommunity        models.UserCommunity
+)
 
 type TxOptionsAddresses []string
 
@@ -54,10 +55,33 @@ type App struct {
 }
 
 type Strategy interface {
-	TallyVotes(votes []*models.VoteWithBalance, p *models.ProposalResults, proposal *models.Proposal) (models.ProposalResults, error)
-	GetVotes(votes []*models.VoteWithBalance, proposal *models.Proposal) ([]*models.VoteWithBalance, error)
-	GetVoteWeightForBalance(vote *models.VoteWithBalance, proposal *models.Proposal) (float64, error)
+	TallyVotes(
+		votes []*models.VoteWithBalance,
+		p *models.ProposalResults,
+		proposal *models.Proposal,
+	) (models.ProposalResults, error)
+	GetVotes(
+		votes []*models.VoteWithBalance,
+		proposal *models.Proposal,
+	) ([]*models.VoteWithBalance, error)
+	GetVoteWeightForBalance(
+		vote *models.VoteWithBalance,
+		proposal *models.Proposal,
+	) (float64, error)
 	InitStrategy(f *shared.FlowAdapter, db *shared.Database)
+	TallyVotes(
+		votes []*models.VoteWithBalance,
+		proposal *models.Proposal,
+	) (models.ProposalResults, error)
+	GetVotes(
+		votes []*models.VoteWithBalance,
+		proposal *models.Proposal,
+	) ([]*models.VoteWithBalance, error)
+	GetVoteWeightForBalance(
+		vote *models.VoteWithBalance,
+		proposal *models.Proposal,
+	) (float64, error)
+	InitStrategy(f *shared.FlowAdapter, db *shared.Database, sc *shared.DpsAdapter)
 	FetchBalance(b *models.Balance, p *models.Proposal) (*models.Balance, error)
 	RequiresSnapshot() bool
 }
@@ -164,7 +188,7 @@ func (a *App) Initialize() {
 	}
 
 	// Create Map for Flow Adaptor to look up when voting
-	var customScriptsMap = make(map[string]shared.CustomScript)
+	customScriptsMap := make(map[string]shared.CustomScript)
 	for _, script := range customScripts {
 		customScriptsMap[script.Key] = script
 	}
@@ -202,8 +226,7 @@ func (a *App) ConnectDB(username, password, host, port, dbname string) {
 	database.Context = context.Background()
 	database.Name = dbname
 
-	connectionString :=
-		fmt.Sprintf("postgres://%s:%s@%s:%s/%s", username, password, host, port, dbname)
+	connectionString := ToUnixURL(false, username, password, dbname, host)
 
 	pconf, confErr := pgxpool.ParseConfig(connectionString)
 	if confErr != nil {
@@ -225,4 +248,31 @@ func (a *App) ConnectDB(username, password, host, port, dbname string) {
 		a.DB = &database
 		log.Info().Msgf("Successfully created Postgres conn pool")
 	}
+}
+
+func ToUnixURL(ssl bool, username, password, db, host string) string {
+	urlStr := "postgresql://"
+
+	if len(username) == 0 {
+		username = "postgres"
+	}
+	urlStr += username
+
+	if len(password) > 0 {
+		urlStr = urlStr + ":" + url.PathEscape(password)
+	}
+	urlStr += "@"
+
+	urlStr += "/" + url.PathEscape(db)
+
+	// Append query parameters
+	urlStr += "?" + "host=" + host
+
+	mode := ""
+	if !ssl {
+		mode = "&sslmode=disable"
+	}
+
+	urlStr += mode
+	return urlStr
 }

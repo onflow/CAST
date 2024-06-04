@@ -4,8 +4,9 @@ import (
 	"log"
 	"os"
 
-	app "github.com/DapperCollectives/CAST/backend/main/server"
 	"github.com/joho/godotenv"
+
+	app "github.com/DapperCollectives/CAST/backend/main/server"
 )
 
 func main() {

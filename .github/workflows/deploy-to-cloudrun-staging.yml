@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - staging
-      - jp/add-cloudrun-support 
 
 env:
 
